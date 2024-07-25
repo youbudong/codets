@@ -1,0 +1,7 @@
+APIFOX_PROJCET:
+  - id: 123
+    name: user
+  - id: 1234
+    name: message
+APIFOX_TOKEN: xxx
+OUTPUT_DIR: app/types
