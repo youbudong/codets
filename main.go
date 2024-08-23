@@ -120,6 +120,9 @@ func main() {
 							file.WriteString(fmt.Sprintf("  %s: %s[];\n", key, atype))
 						}
 
+						if items.Value.Type.Is("string") {
+							file.WriteString(fmt.Sprintf("  %s: string[];\n", key))
+						}
 						continue
 					}
 
