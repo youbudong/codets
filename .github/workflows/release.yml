@@ -27,7 +27,7 @@ jobs:
     - name: Build binary
       run: |
         mkdir -p dist
-        GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o dist/myapp-${{ matrix.goos }}-${{ matrix.goarch }}
+        GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o dist/codets-${{ matrix.goos }}-${{ matrix.goarch }}
 
     - name: Upload Binaries
       uses: actions/upload-artifact@v4
