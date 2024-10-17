@@ -1,7 +1,10 @@
 APIFOX_PROJCET:
-  - id: 123        # 项目ID
-    name: user     # 生成的文件名
-  - id: 1234 
+  - id: 123 # 项目ID
+    name: user # 生成的文件名
+  - id: 1234
     name: message
-APIFOX_TOKEN: xxx  # Apifox Token
+  - id: 4726042
+    name: growave
+    file: swag1.json # 通过本地swag.json文件生成
+APIFOX_TOKEN: xxx # Apifox Token
 OUTPUT_DIR: app/types # 输出目录
