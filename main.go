@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -155,15 +156,15 @@ func firstUpper(str string) string {
 }
 
 func fileTypescript(file *os.File, schemas openapi3.Schemas) {
-	for name, schema := range schemas {
+
+	// 顺序map
+	sortMapSchemas(schemas, func(name string, schema *openapi3.SchemaRef) {
 		_, err := file.WriteString(fmt.Sprintf("export interface %s {\n", name))
 		if err != nil {
 			panic(err)
 		}
-		for key, value := range schema.Value.Properties {
-
+		sortMapSchemas(schema.Value.Properties, func(key string, value *openapi3.SchemaRef) {
 			valueTypes := []string{}
-
 			for _, v := range value.Value.Type.Slice() {
 				if v == "array" {
 					// array类型需要判断items类型
@@ -206,12 +207,14 @@ func fileTypescript(file *os.File, schemas openapi3.Schemas) {
 					panic(err)
 				}
 			}
-		}
+		})
+
 		_, err = file.WriteString("}\n")
 		if err != nil {
 			panic(err)
 		}
-	}
+	})
+
 }
 
 func fileGo(file *os.File, schemas openapi3.Schemas) {
@@ -279,5 +282,22 @@ func fileGo(file *os.File, schemas openapi3.Schemas) {
 		if err != nil {
 			panic(err)
 		}
+	}
+}
+
+// sortMapKeys 接受一个 map 和一个函数，该函数用于处理排序后键值对。
+func sortMapSchemas(m openapi3.Schemas, handler func(k string, v *openapi3.SchemaRef)) {
+	// 提取 map 的键到一个切片
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+
+	// 对键进行排序
+	sort.Strings(keys)
+
+	// 通过排序后的键迭代 map，并调用处理函数
+	for _, k := range keys {
+		handler(k, m[k])
 	}
 }

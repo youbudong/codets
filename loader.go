@@ -42,5 +42,18 @@ func loadOpenApi(projectId string, token string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// 保存到文件
+	// curDir, _ := os.Getwd()
+	// file, err := os.OpenFile(fmt.Sprintf("%s/openapi_%s.json", curDir, projectId), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// defer file.Close()
+	// _, err = file.Write(body)
+	// if err != nil {
+	// 	panic(err)
+	// }
+
 	return body, nil
 }
