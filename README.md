@@ -12,5 +12,3 @@ OUTPUT_DIR: app/types # 输出目录
 ```
 
 生成类型文件 `./codets-windows-amd64.exe`
-
-w
