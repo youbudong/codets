@@ -73,6 +73,10 @@ func main() {
 	// 迭代加载openapi文件，解析出ts的interface文件
 	// Do something with route.Operation
 	for _, project := range projects {
+
+		// 准备生成文件
+		fmt.Printf("Start generate id: %s, name: %s\n", project.Id, project.Name)
+
 		projectId := project.Id
 		var openApiData []byte
 		if project.File != "" {
@@ -114,14 +118,19 @@ func main() {
 		case "go":
 			fileGo(file, doc.Components.Schemas)
 		default:
-			panic(fmt.Sprintf("unsupported output type: %s", otype))
+			if otype != "" {
+				fmt.Printf("Unsupported output type: %s\n", otype)
+				break
+			}
+			fileTypescript(file, doc.Components.Schemas)
 		}
 
 		err = file.Close()
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("Generate %s\n", filename)
+		// 生成完成
+		fmt.Printf("Generation completed %s\n\n", filename)
 	}
 }
 

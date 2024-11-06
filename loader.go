@@ -21,22 +21,23 @@ func loadOpenApi(projectId string, token string) ([]byte, error) {
 	req.Header.Set("Content-Type", "application/json")
 	// Perform the request
 	fmt.Println("Sending request to Apifox...")
-	headersJson := fmt.Sprintf(`{
-		"X-Apifox-Api-Version": "2024-03-28",
-		"Authorization": "Bearer %s",
-		"Content-Type": "application/json"
-		}`, token)
-	fmt.Println(req.URL.String(), "\n", headersJson, "\n", string(jsonData))
+	// headersJson := fmt.Sprintf(`{
+	// 	"X-Apifox-Api-Version": "2024-03-28",
+	// 	"Authorization": "Bearer %s",
+	// 	"Content-Type": "application/json"
+	// 	}`, token)
+	// fmt.Println(req.URL.String(), "\n", headersJson, "\n", string(jsonData))
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
+		fmt.Printf("Error sending request projectId %s, error: %v\n", projectId, err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("error response code: %d", resp.StatusCode)
+		return nil, fmt.Errorf("projectId %s,	 Error response code: %d", projectId, resp.StatusCode)
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
