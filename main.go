@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -180,11 +181,23 @@ func fileTypescript(file *os.File, schemas openapi3.Schemas) {
 					items := value.Value.Items
 					if items.Ref != "" {
 						atype := strings.Split(items.Ref, "/")[len(strings.Split(items.Ref, "/"))-1]
-						file.WriteString(fmt.Sprintf("  %s: %s[];\n", key, atype))
+						// file.WriteString(fmt.Sprintf("  %s: %s[];\n", key, atype))
+						required := slices.Contains(schema.Value.Required, key)
+						if required {
+							file.WriteString(fmt.Sprintf("  %s: %s[];\n", key, atype))
+						} else {
+							file.WriteString(fmt.Sprintf("  %s?: %s[];\n", key, atype))
+						}
 					}
 
 					if items.Value.Type.Is("string") {
-						file.WriteString(fmt.Sprintf("  %s: string[];\n", key))
+						// file.WriteString(fmt.Sprintf("  %s: string[];\n", key))
+						required := slices.Contains(schema.Value.Required, key)
+						if required {
+							file.WriteString(fmt.Sprintf("  %s: string[];\n", key))
+						} else {
+							file.WriteString(fmt.Sprintf("  %s?: string[];\n", key))
+						}
 					}
 					continue
 				}
@@ -193,7 +206,13 @@ func fileTypescript(file *os.File, schemas openapi3.Schemas) {
 					// object类型需要判断properties类型
 					if value.Ref != "" {
 						atype := strings.Split(value.Ref, "/")[len(strings.Split(value.Ref, "/"))-1]
-						file.WriteString(fmt.Sprintf("  %s: %s;\n", key, atype))
+						// file.WriteString(fmt.Sprintf("  %s: %s;\n", key, atype))
+						required := slices.Contains(schema.Value.Required, key)
+						if required {
+							file.WriteString(fmt.Sprintf("  %s: %s;\n", key, atype))
+						} else {
+							file.WriteString(fmt.Sprintf("  %s?: %s;\n", key, atype))
+						}
 					}
 					continue
 				}
@@ -211,7 +230,13 @@ func fileTypescript(file *os.File, schemas openapi3.Schemas) {
 						panic(err)
 					}
 				}
-				_, err = file.WriteString(fmt.Sprintf("  %s: %s;\n", key, valueTypesStr))
+				// _, err = file.WriteString(fmt.Sprintf("  %s: %s;\n", key, valueTypesStr))
+				required := slices.Contains(schema.Value.Required, key)
+				if required {
+					_, err = file.WriteString(fmt.Sprintf("  %s: %s;\n", key, valueTypesStr))
+				} else {
+					_, err = file.WriteString(fmt.Sprintf("  %s?: %s;\n", key, valueTypesStr))
+				}
 				if err != nil {
 					panic(err)
 				}
