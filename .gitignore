@@ -3,3 +3,5 @@ codets*
 apifox.yaml
 types
 swag1.json
+*.ts
+*.d.ts
