@@ -91,7 +91,7 @@ func fileTypescript(odir, projectName string, schemas openapi3.Schemas) {
 			}
 		})
 
-		_, err = file.WriteString("}\n")
+		_, err = file.WriteString("}\n\n")
 		if err != nil {
 			panic(err)
 		}
@@ -113,18 +113,99 @@ func fileTsClient(dir, projectName string, doc *openapi3.T) {
 	file.WriteString("  const { get, post } = createRequest(props);\n\n")
 
 	// 遍历paths，生成js的client文件
+	refnames := []string{}
+	funcnames := []string{}
 	for path, pathItem := range doc.Paths.Map() {
 		for method, operation := range pathItem.Operations() {
-			ojson, _ := operation.MarshalJSON()
-			fmt.Printf("operation: %v\n", strings.TrimSpace(string(ojson)))
+			// ojson, _ := operation.MarshalJSON()
+			// fmt.Printf("operation: %v\n", strings.TrimSpace(string(ojson)))
 
-			file.WriteString(fmt.Sprintf("  /** %s */\n", operation.Summary))
-			funcName := GetFuncName(path)
-			// fmt.Printf("%s, %s\n", funcName, method)
-
-			if method == "POST" {
-				file.WriteString(fmt.Sprintf("export const %s = async (data:%s) => {\n", funcName, strings.ReplaceAll(operation.RequestBody.Ref, "#/components/schemas/", "")))
+			// body 参数
+			refname := ""
+			if operation.RequestBody != nil && operation.RequestBody.Value != nil && operation.RequestBody.Value.Content != nil && operation.RequestBody.Value.Content.Get("application/json") != nil {
+				// fmt.Printf("%s\n", operation.RequestBody.Value.Content.Get("application/json").Schema.Ref)
+				// ojson1, _ := operation.RequestBody.Value.MarshalJSON()
+				// fmt.Printf("%v\n", strings.TrimSpace(string(ojson1)))
+				refname = operation.RequestBody.Value.Content.Get("application/json").Schema.Ref
+				refname = strings.ReplaceAll(refname, "#/components/schemas/", "")
+				refnames = append(refnames, refname)
 			}
+
+			// query 参数
+			querykeys := []string{}
+			if operation.Parameters != nil {
+				// fmt.Printf("operation: %v\n", strings.TrimSpace(string(ojson)))
+				for _, param := range operation.Parameters {
+					if param.Value.In == "query" {
+						// ptype := param.Value.Schema.Value.Type.Slice()[0]
+						// querykeys = append(querykeys, fmt.Sprintf("%s: %s", param.Value.Name, ptype))
+						querykeys = append(querykeys, param.Value.Name)
+					}
+				}
+			}
+			fmt.Printf("querykeys: %v\n", querykeys)
+
+			// 注释
+			file.WriteString(fmt.Sprintf("  /** %s */\n", operation.Summary))
+			// 处理第一行，包含函数名和body/path/query参数
+			funcName := GetFuncName(path)
+			funcnames = append(funcnames, funcName)
+			funcNameAndParams := fmt.Sprintf("  const %s = async (", funcName)
+			// path 参数
+			paths := []string{}
+			for _, param := range operation.Parameters {
+				if param.Value.In == "path" {
+					ptype := param.Value.Schema.Value.Type.Slice()[0]
+					paths = append(paths, fmt.Sprintf("%s: %s", param.Value.Name, ptype))
+				}
+			}
+			pathStr := ""
+			if len(paths) > 0 {
+				pathStr = fmt.Sprintf("{%s}", strings.Join(paths, ", "))
+			}
+			// 确定参数类型
+			dataType := ""
+			// body
+			if refname != "" {
+				dataType = refname
+			}
+			// query
+			if len(querykeys) > 0 {
+				if dataType != "" {
+					dataType = fmt.Sprintf("%s &", dataType)
+				}
+				dataType = fmt.Sprintf("%s {%s}", dataType, strings.Join(querykeys, ", "))
+			}
+			// path
+			if pathStr != "" {
+				if dataType != "" {
+					dataType = fmt.Sprintf("%s &", dataType)
+				}
+				dataType = fmt.Sprintf("%s %s", dataType, pathStr)
+			}
+			// data := (body/query)+ pathStr
+			funcNameAndParams = fmt.Sprintf("%s data: %s) => {\n", funcNameAndParams, dataType)
+			file.WriteString(funcNameAndParams)
+
+			// 暂时
+			file.WriteString("  }\n\n")
+
+			// fmt.Printf("%s, %s\n", funcName, method)
+			path := strings.ReplaceAll(path, "{", "${")
+			fmt.Printf("%s, %s\n", method, path)
+
+			// if method == "POST" {
+			// 	if refname != "" {
+			// 		file.WriteString(fmt.Sprintf("const { id } = data;\n"))
+			// 		file.WriteString(fmt.Sprintf("  return await post(`%s`, data);\n", path))
+			// 	} else {
+			// 		file.WriteString(fmt.Sprintf("const %s = async () => {\n", funcName))
+			// 		file.WriteString(fmt.Sprintf("  return await post(`%s`);\n", path))
+			// 	}
+			// 	file.WriteString("}\n\n")
+			// } else {
+			// 	file.WriteString(fmt.Sprintf("const %s = async () => {}\n", funcName))
+			// }
 
 			// file.WriteString(fmt.Sprintf("export const %s = async (data) => {\n", funcName))
 
@@ -156,7 +237,9 @@ func fileTsClient(dir, projectName string, doc *openapi3.T) {
 			// file.WriteString(fmt.Sprintf("}\n\n"))
 		}
 	}
+	file.WriteString("  return {" + strings.Join(funcnames, ", ") + "};\n")
 	file.WriteString(fmt.Sprintf("}\n\n"))
+	file.WriteString("import { " + strings.Join(RemoveDuplicates(refnames), ", ") + " } from '../types/" + projectName + "';\n")
 }
 
 func fileTsRequest(dir string) {
@@ -211,7 +294,7 @@ export const createRequest = (props: ClientAPIProps) => {
 		get: async <T>(url: string, options?: RequestInit) => {
 			return await request<T>(url, { method: "GET", ...options });
 		},
-		post: async <T>(url: string, body: any, options?: RequestInit) => {
+		post: async <T>(url: string, body?: any, options?: RequestInit) => {
 			return await request<T>(url, {
 				method: "POST",
 				body: JSON.stringify(body),
@@ -220,4 +303,18 @@ export const createRequest = (props: ClientAPIProps) => {
 		},
 	};
 };`)
+}
+
+func RemoveDuplicates(input []string) []string {
+	seen := make(map[string]struct{})
+	result := make([]string, 0, len(input))
+
+	for _, str := range input {
+		if _, ok := seen[str]; !ok {
+			seen[str] = struct{}{}
+			result = append(result, str)
+		}
+	}
+
+	return result
 }
