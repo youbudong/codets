@@ -47,6 +47,14 @@ func fileTypescript(odir, projectName string, schemas openapi3.Schemas) {
 							file.WriteString(fmt.Sprintf("  %s?: string[];\n", key))
 						}
 					}
+					if items.Value.Type.Is("integer") {
+						required := slices.Contains(schema.Value.Required, key)
+						if required {
+							file.WriteString(fmt.Sprintf("  %s: number[];\n", key))
+						} else {
+							file.WriteString(fmt.Sprintf("  %s?: number[];\n", key))
+						}
+					}
 					continue
 				}
 
