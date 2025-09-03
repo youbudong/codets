@@ -9,7 +9,7 @@ import (
 )
 
 func fileTypescript(odir, projectName string, schemas openapi3.Schemas) {
-	filename := fmt.Sprintf("%s.%s", projectName, "d.ts")
+	filename := fmt.Sprintf("%s.%s", projectName, "ts")
 	file := GetOsFile(odir, filename)
 	defer file.Close()
 
@@ -24,6 +24,13 @@ func fileTypescript(odir, projectName string, schemas openapi3.Schemas) {
 		sortMapSchemas(schema.Value.Properties, func(key string, value *openapi3.SchemaRef) {
 			valueTypes := []string{}
 			for _, v := range value.Value.Type.Slice() {
+				description := value.Value.Description
+				if description != "" {
+					_, err = file.WriteString(fmt.Sprintf("  /** %s */\n", description))
+					if err != nil {
+						panic(err)
+					}
+				}
 				if v == "array" {
 					// array类型需要判断items类型
 					items := value.Value.Items
@@ -79,13 +86,7 @@ func fileTypescript(odir, projectName string, schemas openapi3.Schemas) {
 			valueTypesStr := strings.Join(valueTypes, " | ")
 
 			if valueTypesStr != "" {
-				description := value.Value.Description
-				if description != "" {
-					_, err = file.WriteString(fmt.Sprintf("  /** %s */\n", description))
-					if err != nil {
-						panic(err)
-					}
-				}
+
 				// _, err = file.WriteString(fmt.Sprintf("  %s: %s;\n", key, valueTypesStr))
 				required := slices.Contains(schema.Value.Required, key)
 				if required {

@@ -96,7 +96,7 @@ func main() {
 		case "go":
 			fileGo(odir, project.Name, doc.Components.Schemas)
 		case "tsclient":
-			fileTypescript(fmt.Sprintf("%s/types/", odir), project.Name, doc.Components.Schemas)
+			fileTypescript(fmt.Sprintf("%s/types/", odir), fmt.Sprintf("%s.d", project.Name), doc.Components.Schemas)
 
 			fileTsClient(fmt.Sprintf("%s/client/", odir), project.Name, doc)
 
