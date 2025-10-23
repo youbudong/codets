@@ -39,9 +39,9 @@ func fileTypescript(odir, projectName string, schemas openapi3.Schemas) {
 						// file.WriteString(fmt.Sprintf("  %s: %s[];\n", key, atype))
 						required := slices.Contains(schema.Value.Required, key)
 						if required {
-							file.WriteString(fmt.Sprintf("  %s: %s[];\n", key, atype))
+							file.WriteString(fmt.Sprintf("  %s: %s[];\n", FixTsKey(key), atype))
 						} else {
-							file.WriteString(fmt.Sprintf("  %s?: %s[];\n", key, atype))
+							file.WriteString(fmt.Sprintf("  %s?: %s[];\n", FixTsKey(key), atype))
 						}
 					}
 
@@ -49,17 +49,17 @@ func fileTypescript(odir, projectName string, schemas openapi3.Schemas) {
 						// file.WriteString(fmt.Sprintf("  %s: string[];\n", key))
 						required := slices.Contains(schema.Value.Required, key)
 						if required {
-							file.WriteString(fmt.Sprintf("  %s: string[];\n", key))
+							file.WriteString(fmt.Sprintf("  %s: string[];\n", FixTsKey(key)))
 						} else {
-							file.WriteString(fmt.Sprintf("  %s?: string[];\n", key))
+							file.WriteString(fmt.Sprintf("  %s?: string[];\n", FixTsKey(key)))
 						}
 					}
 					if items.Value.Type.Is("integer") {
 						required := slices.Contains(schema.Value.Required, key)
 						if required {
-							file.WriteString(fmt.Sprintf("  %s: number[];\n", key))
+							file.WriteString(fmt.Sprintf("  %s: number[];\n", FixTsKey(key)))
 						} else {
-							file.WriteString(fmt.Sprintf("  %s?: number[];\n", key))
+							file.WriteString(fmt.Sprintf("  %s?: number[];\n", FixTsKey(key)))
 						}
 					}
 					continue
@@ -72,9 +72,9 @@ func fileTypescript(odir, projectName string, schemas openapi3.Schemas) {
 						// file.WriteString(fmt.Sprintf("  %s: %s;\n", key, atype))
 						required := slices.Contains(schema.Value.Required, key)
 						if required {
-							file.WriteString(fmt.Sprintf("  %s: %s;\n", key, atype))
+							file.WriteString(fmt.Sprintf("  %s: %s;\n", FixTsKey(key), atype))
 						} else {
-							file.WriteString(fmt.Sprintf("  %s?: %s;\n", key, atype))
+							file.WriteString(fmt.Sprintf("  %s?: %s;\n", FixTsKey(key), atype))
 						}
 					}
 					continue
@@ -90,9 +90,9 @@ func fileTypescript(odir, projectName string, schemas openapi3.Schemas) {
 				// _, err = file.WriteString(fmt.Sprintf("  %s: %s;\n", key, valueTypesStr))
 				required := slices.Contains(schema.Value.Required, key)
 				if required {
-					_, err = file.WriteString(fmt.Sprintf("  %s: %s;\n", key, valueTypesStr))
+					_, err = file.WriteString(fmt.Sprintf("  %s: %s;\n", FixTsKey(key), valueTypesStr))
 				} else {
-					_, err = file.WriteString(fmt.Sprintf("  %s?: %s;\n", key, valueTypesStr))
+					_, err = file.WriteString(fmt.Sprintf("  %s?: %s;\n", FixTsKey(key), valueTypesStr))
 				}
 				if err != nil {
 					panic(err)
@@ -326,4 +326,13 @@ func RemoveDuplicates(input []string) []string {
 	}
 
 	return result
+}
+
+// / key 处理
+// / 如果包含-，则处理字符串
+func FixTsKey(key string) string {
+	if strings.Contains(key, "-") {
+		key = fmt.Sprintf("\"%s\"", key)
+	}
+	return key
 }
